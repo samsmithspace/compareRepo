@@ -69,8 +69,8 @@ def get_modified_vit_model(num_classes, model_name='vit_base_patch16_224'):
                 param.requires_grad = False
 
     return model
-'''
 
+'''
 def get_modified_vit_model(num_classes, model_name='vit_base_patch16_224'):
     """
     Loads a pre-trained Vision Transformer (ViT) model using timm and modifies it for a new number of classes.

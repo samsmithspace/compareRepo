@@ -171,7 +171,7 @@ def main():
     print(f"Example classes: {dataset_dict['class_names'][:5]}")
 
     # Create DataLoaders
-    batch_size = 64
+    batch_size = 32
     dataloaders = {
         'train': DataLoader(dataset_dict['train'], batch_size=batch_size, shuffle=True),
         'test': DataLoader(dataset_dict['test'], batch_size=batch_size)
