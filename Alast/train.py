@@ -17,6 +17,7 @@ def train_alast(model, train_loader, val_loader, num_epochs=10, lr=1e-4,
     """
     Train a ViT model using improved ALaST for efficient fine-tuning
     with enhanced stability after warmup
+    Uses AdamW with weight_decay=0.1 and NO scheduler to match trainbackup.py
     """
     # Initialize ALaST wrapper with improved importance estimation
     alast_model = ImprovedALaST(model, n_train_layers=n_train_layers, alpha=0.005)
@@ -25,12 +26,16 @@ def train_alast(model, train_loader, val_loader, num_epochs=10, lr=1e-4,
     # Enable diagnostics for the first couple of epochs
     alast_model.print_diagnostics = True
 
-    # Optimizer and loss
-    optimizer = Adam(filter(lambda p: p.requires_grad, alast_model.parameters()), lr=lr)
+    # MODIFIED: Use AdamW with weight_decay instead of plain Adam
+    optimizer = torch.optim.AdamW(
+        filter(lambda p: p.requires_grad, alast_model.parameters()), 
+        lr=lr, 
+        weight_decay=0.1
+    )
     criterion = nn.CrossEntropyLoss()
 
-    # Learning rate scheduler for better convergence
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=num_epochs)
+    # REMOVED: No learning rate scheduler (to match trainbackup.py)
+    # scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=num_epochs)
 
     # Mixed precision setup
     if mixed_precision and torch.cuda.is_available():
@@ -98,8 +103,7 @@ def train_alast(model, train_loader, val_loader, num_epochs=10, lr=1e-4,
 
             total_loss += loss.item()
 
-        # Step the learning rate scheduler
-        scheduler.step()
+        # REMOVED: No scheduler.step() call
 
         # Record metrics
         epoch_time = time.time() - start_time
@@ -122,7 +126,7 @@ def train_alast(model, train_loader, val_loader, num_epochs=10, lr=1e-4,
 
         # Check for accuracy drops after warmup
         if epoch > alast_model.warmup_epochs and val_acc < prev_val_acc * 0.95:
-            print(f"Warning: >5% accuracy drop detected! ({prev_val_acc:.2f}% → {val_acc:.2f}%)")
+            print(f"Warning: >5% accuracy drop detected! ({prev_val_acc:.2f}% ? {val_acc:.2f}%)")
             print("Consider unfreezing some layers or adjusting token dropping parameters.")
 
             # Emergency recovery mechanism for dramatic accuracy drops
@@ -165,8 +169,12 @@ def train_alast(model, train_loader, val_loader, num_epochs=10, lr=1e-4,
                 alast_model.min_token_percent = min(0.95, alast_model.min_token_percent + 0.05)
                 print(f"Increased minimum token percentage to {alast_model.min_token_percent:.2f}")
 
-                # 5. Adjust optimizer
-                optimizer = Adam(filter(lambda p: p.requires_grad, alast_model.parameters()), lr=lr * 0.8)
+                # 5. Adjust optimizer - recreate with AdamW and weight_decay
+                optimizer = torch.optim.AdamW(
+                    filter(lambda p: p.requires_grad, alast_model.parameters()), 
+                    lr=lr * 0.8, 
+                    weight_decay=0.1
+                )
                 if scaler is not None:
                     scaler = torch.amp.GradScaler('cuda')  # Reset scaler
 
@@ -207,24 +215,25 @@ def train_alast(model, train_loader, val_loader, num_epochs=10, lr=1e-4,
         print("ALaST metrics saved successfully to results/alast_beans_metrics.json")
     except Exception as e:
         print(f"Error saving ALaST metrics: {str(e)}")
+        import traceback
         traceback.print_exc()
 
     return alast_model, metrics, best_accuracy
-
 
 def train_traditional_vit(model, train_loader, val_loader, num_epochs=10, lr=1e-4,
                           device='cuda', mixed_precision=True):
     """
     Standard fine-tuning for Vision Transformer models (for comparison)
+    Uses AdamW with weight_decay=0.1 and NO scheduler to match trainbackup.py
     """
     model = model.to(device)
 
-    # Optimizer and loss
-    optimizer = Adam(model.parameters(), lr=lr)
+    # MODIFIED: Use AdamW with weight_decay instead of plain Adam
+    optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=0.1)
     criterion = nn.CrossEntropyLoss()
 
-    # Learning rate scheduler
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=num_epochs)
+    # REMOVED: No learning rate scheduler (to match trainbackup.py)
+    # scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=num_epochs)
 
     # Mixed precision setup
     if mixed_precision and torch.cuda.is_available():
@@ -277,8 +286,7 @@ def train_traditional_vit(model, train_loader, val_loader, num_epochs=10, lr=1e-
 
             total_loss += loss.item()
 
-        # Step the scheduler
-        scheduler.step()
+        # REMOVED: No scheduler.step() call
 
         # Record metrics
         epoch_time = time.time() - start_time
@@ -319,6 +327,7 @@ def train_traditional_vit(model, train_loader, val_loader, num_epochs=10, lr=1e-
             json.dump(serializable_metrics, f, indent=2)
     except Exception as e:
         print(f"Error saving traditional metrics: {str(e)}")
+        import traceback
         traceback.print_exc()
 
     return model, metrics, best_accuracy

@@ -79,7 +79,7 @@ def run_comparison():
     print(f"Test samples: {len(test_dataset)}")
 
     # MODIFIED: Match batch size from trainbackup.py
-    batch_size = 32  # Changed from 32 to 64
+    batch_size = 32
     train_loader = DataLoader(
         train_dataset, batch_size=batch_size, shuffle=True,
         #num_workers=2, pin_memory=True if torch.cuda.is_available() else False
@@ -108,7 +108,7 @@ def run_comparison():
     print(f"  - Epochs: {num_epochs}")
     print(f"  - Learning Rate: {learning_rate}")
     print(f"  - Weight Decay: 0.1")
-    print(f"  - Optimizer: AdamW")
+    print(f"  - Optimizer: AdamW (NO SCHEDULER)")
     print(f"  - Batch Size: {batch_size}")
     print(f"  - Number of Classes: {num_classes}")
     print(f"  - Mixed Precision: {mixed_precision}")
@@ -289,7 +289,7 @@ def main():
     print(f"Test samples: {len(test_dataset)}")
 
     # MODIFIED: Match batch size from trainbackup.py
-    batch_size = 64  # Changed from 32 to 64
+    batch_size = 64
     train_loader = DataLoader(
         train_dataset, batch_size=batch_size, shuffle=True,
         num_workers=4, pin_memory=True if torch.cuda.is_available() else False
@@ -311,7 +311,7 @@ def main():
     num_epochs = 30
     learning_rate = 1e-4
     # MODIFIED: Disable mixed precision to match trainbackup.py
-    mixed_precision = False  # Changed from torch.cuda.is_available() to False
+    mixed_precision = False
     n_train_layers = 8  # More trainable layers for 100 classes
 
     print(f"\n{'='*60}")
@@ -322,7 +322,7 @@ def main():
     print(f"  - Epochs: {num_epochs}")
     print(f"  - Learning Rate: {learning_rate}")
     print(f"  - Weight Decay: 0.1")
-    print(f"  - Optimizer: AdamW")
+    print(f"  - Optimizer: AdamW (NO SCHEDULER)")
     print(f"  - Batch Size: {batch_size}")
     print(f"  - Number of Classes: {num_classes}")
     print(f"  - Mixed Precision: {mixed_precision}")
